@@ -2,12 +2,14 @@ package code
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 )
 
-type entry struct {
+type diff struct {
 	key        string
+	change     string
 	valueLeft  any
 	valueRight any
 }
@@ -23,34 +25,38 @@ func GenDiff(filepathLeft, filepathRight, format string) (string, error) {
 		return "", err
 	}
 
-	entries := getEntries(dataLeft, dataRight)
+	diff := genDiff(dataLeft, dataRight)
 
-	return genDiff(entries), nil
+	return buildDiff(diff), nil
 }
 
-func genDiff(entries []entry) string {
+func buildDiff(diff map[string]diff) string {
 	var sb strings.Builder
+
+	keys := slices.Sorted(maps.Keys(diff))
 
 	sb.WriteString("{\n")
 
-	for _, entry := range entries {
-		if entry.valueLeft == nil {
-			fmt.Fprintf(&sb, "  + %s: %v\n", entry.key, entry.valueRight)
+	for _, key := range keys {
+		diffItem := diff[key]
+
+		if diffItem.change == "added" {
+			fmt.Fprintf(&sb, "  + %s: %v\n", key, diffItem.valueRight)
 			continue
 		}
 
-		if entry.valueRight == nil {
-			fmt.Fprintf(&sb, "  - %s: %v\n", entry.key, entry.valueLeft)
+		if diffItem.change == "removed" {
+			fmt.Fprintf(&sb, "  - %s: %v\n", key, diffItem.valueLeft)
 			continue
 		}
 
-		if entry.valueLeft != entry.valueRight {
-			fmt.Fprintf(&sb, "  - %s: %v\n", entry.key, entry.valueLeft)
-			fmt.Fprintf(&sb, "  + %s: %v\n", entry.key, entry.valueRight)
+		if diffItem.change == "value_changed" {
+			fmt.Fprintf(&sb, "  - %s: %v\n", key, diffItem.valueLeft)
+			fmt.Fprintf(&sb, "  + %s: %v\n", key, diffItem.valueRight)
 			continue
 		}
 
-		fmt.Fprintf(&sb, "    %s: %v\n", entry.key, entry.valueLeft)
+		fmt.Fprintf(&sb, "    %s: %v\n", key, diffItem.valueLeft)
 	}
 
 	sb.WriteString("}")
@@ -58,8 +64,8 @@ func genDiff(entries []entry) string {
 	return sb.String()
 }
 
-func getEntries(dataLeft, dataRight map[string]any) []entry {
-	var result []entry
+func genDiff(dataLeft, dataRight map[string]any) map[string]diff {
+	result := make(map[string]diff)
 	var keys []string
 
 	for k := range dataLeft {
@@ -72,12 +78,22 @@ func getEntries(dataLeft, dataRight map[string]any) []entry {
 		}
 	}
 
-	slices.Sort(keys)
-
 	for _, key := range keys {
-		valueLeft := dataLeft[key]
-		valueRight := dataRight[key]
-		result = append(result, entry{key, valueLeft, valueRight})
+		valueLeft, existsLeft := dataLeft[key]
+
+		valueRight, existsRight := dataRight[key]
+
+		change := "unchanged"
+
+		if !existsLeft {
+			change = "added"
+		} else if !existsRight {
+			change = "removed"
+		} else if valueLeft != valueRight {
+			change = "value_changed"
+		}
+
+		result[key] = diff{key, change, valueLeft, valueRight}
 	}
 
 	return result
