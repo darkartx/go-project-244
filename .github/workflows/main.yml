@@ -18,25 +18,8 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
-
-  tests:
-    name: Tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: '1.24'
       - name: Run tests
-        run: make test
-
-  sonarqube:
-    name: SonarQube
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
+        run: make test_coverage
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:

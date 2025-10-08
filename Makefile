@@ -2,6 +2,10 @@ test:
 	go mod tidy
 	go test -v
 
+test_coverage:
+	go mod tidy
+	go test -v -coverprofile=coverage.out
+
 install:
 	go install
 
