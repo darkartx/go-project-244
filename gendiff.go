@@ -1,17 +1,19 @@
 package code
 
 import (
-	"fmt"
 	"maps"
+	"reflect"
 	"slices"
-	"strings"
 )
+
+type empty struct{}
 
 type diff struct {
 	key        string
 	change     string
 	valueLeft  any
 	valueRight any
+	child      map[string]diff
 }
 
 func GenDiff(filepathLeft, filepathRight, format string) (string, error) {
@@ -27,41 +29,33 @@ func GenDiff(filepathLeft, filepathRight, format string) (string, error) {
 
 	diff := genDiff(dataLeft, dataRight)
 
-	return buildDiff(diff), nil
+	formater, err := getFormater(format, diff)
+	if err != nil {
+		return "", err
+	}
+
+	return buildDiff(formater, diff), nil
 }
 
-func buildDiff(diff map[string]diff) string {
-	var sb strings.Builder
-
+func buildDiff(fmt formater, diff map[string]diff) string {
 	keys := slices.Sorted(maps.Keys(diff))
-
-	sb.WriteString("{\n")
 
 	for _, key := range keys {
 		diffItem := diff[key]
 
-		if diffItem.change == "added" {
-			fmt.Fprintf(&sb, "  + %s: %v\n", key, diffItem.valueRight)
-			continue
+		switch diffItem.change {
+		case "added":
+			fmt.added(key, diffItem.valueRight)
+		case "removed":
+			fmt.removed(key, diffItem.valueLeft)
+		case "value_changed":
+			fmt.valueChanged(key, diffItem.valueLeft, diffItem.valueRight)
+		case "unchanged":
+			fmt.unchanged(key, diffItem.valueLeft)
 		}
-
-		if diffItem.change == "removed" {
-			fmt.Fprintf(&sb, "  - %s: %v\n", key, diffItem.valueLeft)
-			continue
-		}
-
-		if diffItem.change == "value_changed" {
-			fmt.Fprintf(&sb, "  - %s: %v\n", key, diffItem.valueLeft)
-			fmt.Fprintf(&sb, "  + %s: %v\n", key, diffItem.valueRight)
-			continue
-		}
-
-		fmt.Fprintf(&sb, "    %s: %v\n", key, diffItem.valueLeft)
 	}
 
-	sb.WriteString("}")
-
-	return sb.String()
+	return fmt.build()
 }
 
 func genDiff(dataLeft, dataRight map[string]any) map[string]diff {
@@ -80,21 +74,48 @@ func genDiff(dataLeft, dataRight map[string]any) map[string]diff {
 
 	for _, key := range keys {
 		valueLeft, existsLeft := dataLeft[key]
-
-		valueRight, existsRight := dataRight[key]
-
-		change := "unchanged"
-
 		if !existsLeft {
-			change = "added"
-		} else if !existsRight {
-			change = "removed"
-		} else if valueLeft != valueRight {
-			change = "value_changed"
+			valueLeft = empty{}
 		}
 
-		result[key] = diff{key, change, valueLeft, valueRight}
+		valueRight, existsRight := dataRight[key]
+		if !existsRight {
+			valueRight = empty{}
+		}
+
+		result[key] = makeDiff(key, valueLeft, valueRight)
 	}
 
 	return result
+}
+
+func makeDiff(key string, valueLeft, valueRight any) diff {
+	typeLeft := reflect.TypeOf(valueLeft)
+	typeRight := reflect.TypeOf(valueRight)
+	change := "unchanged"
+	var child map[string]diff
+
+	switch {
+	case typeLeft == nil || typeRight == nil:
+		if typeLeft != typeRight {
+			change = "value_changed"
+		}
+	case typeLeft == reflect.TypeOf(empty{}):
+		change = "added"
+	case typeRight == reflect.TypeOf(empty{}):
+		change = "removed"
+	case typeLeft.Kind() == reflect.Map && typeRight.Kind() == reflect.Map:
+		change = "diff"
+		child = genDiff(valueLeft.(map[string]any), valueRight.(map[string]any))
+	case typeLeft.Kind() == reflect.Map && typeRight.Kind() != reflect.Map:
+		change = "value_changed"
+	case typeLeft.Kind() != reflect.Map && typeRight.Kind() == reflect.Map:
+		change = "value_changed"
+	default:
+		if valueLeft != valueRight {
+			change = "value_changed"
+		}
+	}
+
+	return diff{key, change, valueLeft, valueRight, child}
 }

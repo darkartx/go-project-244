@@ -54,10 +54,10 @@ func TestGenDiff_ErrorBadYaml(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestGenDiff_ErrorUnsupportedFormat(t *testing.T) {
+func TestGenDiff_ErrorUnsupportedFileFormat(t *testing.T) {
 	_, err := GenDiff("testdata/fixture/file1.toml", "testdata/fixture/file2.json", "stylish")
 
-	assert.EqualError(t, err, "unsupported format: toml")
+	assert.EqualError(t, err, "unsupported file format: toml")
 }
 
 func TestGenDiff_ErrorNoFile(t *testing.T) {

@@ -9,12 +9,12 @@ import (
 	"github.com/go-yaml/yaml"
 )
 
-type UnsupportedFormat struct {
+type UnsupportedFileFormat struct {
 	Format string
 }
 
-func (e UnsupportedFormat) Error() string {
-	return fmt.Sprintf("unsupported format: %s", e.Format)
+func (e UnsupportedFileFormat) Error() string {
+	return fmt.Sprintf("unsupported file format: %s", e.Format)
 }
 
 func parseFile(fp string) (map[string]any, error) {
@@ -40,7 +40,7 @@ func parse(data []byte, format string) (map[string]any, error) {
 	case "yaml", "yml":
 		return parseYaml(data)
 	default:
-		return nil, UnsupportedFormat{Format: format}
+		return nil, UnsupportedFileFormat{Format: format}
 	}
 }
 
