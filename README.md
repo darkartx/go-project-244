@@ -4,6 +4,7 @@
 
 ### Asciinema
 https://asciinema.org/a/jMkD9MmDzXFjga77lolmVP18Z
+https://asciinema.org/a/PZ5MISzCgOZUMPwGKL6IXxbPs
 
 ### Hexlet tests and linter status:
 [![Actions Status](https://github.com/darkartx/go-project-244/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/darkartx/go-project-244/actions)
