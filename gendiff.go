@@ -16,6 +16,10 @@ type diff struct {
 }
 
 func GenDiff(filepathLeft, filepathRight, format string) (string, error) {
+	if format == "" {
+		format = "stylish"
+	}
+
 	dataLeft, err := parseFile(filepathLeft)
 	if err != nil {
 		return "", err
