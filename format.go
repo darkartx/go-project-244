@@ -16,95 +16,117 @@ func (e UnsupportedFormat) Error() string {
 }
 
 type formater interface {
-	unchanged(key string, value any)
-	added(key string, value any)
-	removed(key string, value any)
-	valueChanged(key string, left any, right any)
-	diffStart(scope string, value diff)
-	diffEnd()
 	build() string
 }
 
 type stylish struct {
-	diff    map[string]diff
-	scope   uint8
-	builder strings.Builder
+	root_diff diff
+	builder   strings.Builder
+	indent    uint8
 }
 
-func newStylish(diff map[string]diff) *stylish {
-	result := &stylish{diff: diff}
-	fmt.Fprint(&result.builder, "{\n")
+func newStylish(diff diff) *stylish {
+	result := &stylish{root_diff: diff}
 	return result
 }
 
-func (f *stylish) unchanged(key string, value any) {
-	f.addLine("    %s: %v", key, value)
-}
-
-func (f *stylish) added(key string, value any) {
-	switch value := value.(type) {
-	case map[string]any:
-		f.addLine("  + %s: {", key)
-		// f.addMap(0, value)
-		// f.addLine("}")
-	default:
-		f.addLine("  + %s: %v", key, value)
-	}
-}
-
-func (f *stylish) removed(key string, value any) {
-	switch value := value.(type) {
-	case map[string]any:
-		f.addLine("  - %s: {", key)
-		f.addMap(1, value)
-		f.addLine("}")
-	default:
-		f.addLine("  - %s: %v", key, value)
-	}
-}
-
-func (f *stylish) valueChanged(key string, left any, right any) {
-	f.removed(key, left)
-	f.added(key, right)
-}
-
-func (f *stylish) diffStart(scope string, value diff) {
-
-}
-
-func (f *stylish) diffEnd() {
-
-}
-
 func (f *stylish) build() string {
-	fmt.Fprint(&f.builder, "}")
+	f.addDiff(f.root_diff.key, f.root_diff)
 	return f.builder.String()
 }
 
-func (f *stylish) addLine(format string, values ...any) {
-	fmt.Fprintf(&f.builder, "%*s", f.scope*4, " ")
-	fmt.Fprintf(&f.builder, format, values...)
-	fmt.Fprint(&f.builder, "\n")
+func (f *stylish) addDiff(key string, diff diff) {
+	if key == "" {
+		f.addIndeted(' ', "{\n")
+	} else {
+		f.addIndeted(' ', "%s: {\n", key)
+	}
+
+	keys := slices.Sorted(maps.Keys(diff.child))
+
+	f.indent += 1
+	for _, key := range keys {
+		diffItem := diff.child[key]
+
+		switch diffItem.change {
+		case "unchanged":
+			f.addUnchanged(key, diffItem)
+		case "added":
+			f.addAdded(key, diffItem)
+		case "removed":
+			f.addRemoved(key, diffItem)
+		case "value_changed":
+			f.addValueChanged(key, diffItem)
+		case "diff":
+			f.addDiff(key, diffItem)
+		}
+	}
+	f.indent -= 1
+
+	f.addIndeted(' ', "}\n")
 }
 
-func (f *stylish) addMap(indent uint8, value map[string]any) {
-	keys := slices.Sorted(maps.Keys(value))
-	indent += 1
+func (f *stylish) addUnchanged(key string, diff diff) {
+	f.addIndeted(' ', "%s: ", key)
+	f.addValue(diff.valueLeft)
+}
 
-	for _, key := range keys {
-		item := value[key]
-		switch item := item.(type) {
-		case map[string]any:
-			f.addLine("%*s%s: {", indent*4, " ", key)
-			f.addMap(indent, item)
-			f.addLine("%*s}", indent*4, " ")
-		default:
-			f.addLine("%*s: %v", indent*4, key, item)
-		}
+func (f *stylish) addAdded(key string, diff diff) {
+	f.addIndeted('+', "%s: ", key)
+	f.addValue(diff.valueRight)
+}
+
+func (f *stylish) addRemoved(key string, diff diff) {
+	f.addIndeted('-', "%s: ", key)
+	f.addValue(diff.valueLeft)
+}
+
+func (f *stylish) addValueChanged(key string, diff diff) {
+	f.addRemoved(key, diff)
+	f.addAdded(key, diff)
+}
+
+func (f *stylish) addValue(value any) {
+	switch value := value.(type) {
+	case map[string]any:
+		f.addMap(value)
+	case nil:
+		fmt.Fprint(&f.builder, "null\n")
+	default:
+		fmt.Fprintf(&f.builder, "%v\n", value)
 	}
 }
 
-func getFormater(format string, diff map[string]diff) (formater, error) {
+func (f *stylish) addIndeted(sym rune, format string, args ...any) {
+	if f.indent > 0 {
+		fmt.Fprintf(
+			&f.builder,
+			"%s  %c ",
+			strings.Repeat(" ", (int(f.indent)-1)*4),
+			sym,
+		)
+	}
+	fmt.Fprintf(&f.builder, format, args...)
+}
+
+func (f *stylish) addMap(value map[string]any) {
+	fmt.Fprintf(&f.builder, "{\n")
+
+	keys := slices.Sorted(maps.Keys(value))
+
+	f.indent += 1
+	for _, key := range keys {
+		item := value[key]
+
+		f.addIndeted(' ', "%s: ", key)
+		f.addValue(item)
+	}
+	f.indent -= 1
+
+	f.addIndeted(' ', "}\n")
+}
+
+func getFormater(format string, diff diff) (formater, error) {
 	switch format {
 	case "stylish":
 		return newStylish(diff), nil

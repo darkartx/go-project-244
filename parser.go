@@ -55,11 +55,30 @@ func parseJson(data []byte) (map[string]any, error) {
 }
 
 func parseYaml(data []byte) (map[string]any, error) {
-	var result map[string]any
+	var result map[any]any
 
 	if err := yaml.Unmarshal(data, &result); err != nil {
 		return nil, err
 	}
 
-	return result, nil
+	normalizedResult := normalizeData(result)
+
+	return normalizedResult, nil
+}
+
+func normalizeData(data map[any]any) map[string]any {
+	result := make(map[string]any)
+
+	for k, v := range data {
+		keyStr := fmt.Sprintf("%v", k)
+
+		switch val := v.(type) {
+		case map[any]any:
+			result[keyStr] = normalizeData(val)
+		default:
+			result[keyStr] = val
+		}
+	}
+
+	return result
 }

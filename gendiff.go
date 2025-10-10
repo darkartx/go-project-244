@@ -1,7 +1,6 @@
 package code
 
 import (
-	"maps"
 	"reflect"
 	"slices"
 )
@@ -34,31 +33,10 @@ func GenDiff(filepathLeft, filepathRight, format string) (string, error) {
 		return "", err
 	}
 
-	return buildDiff(formater, diff), nil
+	return formater.build(), nil
 }
 
-func buildDiff(fmt formater, diff map[string]diff) string {
-	keys := slices.Sorted(maps.Keys(diff))
-
-	for _, key := range keys {
-		diffItem := diff[key]
-
-		switch diffItem.change {
-		case "added":
-			fmt.added(key, diffItem.valueRight)
-		case "removed":
-			fmt.removed(key, diffItem.valueLeft)
-		case "value_changed":
-			fmt.valueChanged(key, diffItem.valueLeft, diffItem.valueRight)
-		case "unchanged":
-			fmt.unchanged(key, diffItem.valueLeft)
-		}
-	}
-
-	return fmt.build()
-}
-
-func genDiff(dataLeft, dataRight map[string]any) map[string]diff {
+func genDiff(dataLeft, dataRight map[string]any) diff {
 	result := make(map[string]diff)
 	var keys []string
 
@@ -86,7 +64,13 @@ func genDiff(dataLeft, dataRight map[string]any) map[string]diff {
 		result[key] = makeDiff(key, valueLeft, valueRight)
 	}
 
-	return result
+	return diff{
+		key:        "",
+		change:     "diff",
+		valueLeft:  dataLeft,
+		valueRight: dataRight,
+		child:      result,
+	}
 }
 
 func makeDiff(key string, valueLeft, valueRight any) diff {
@@ -106,9 +90,9 @@ func makeDiff(key string, valueLeft, valueRight any) diff {
 		change = "removed"
 	case typeLeft.Kind() == reflect.Map && typeRight.Kind() == reflect.Map:
 		change = "diff"
-		child = genDiff(valueLeft.(map[string]any), valueRight.(map[string]any))
+		child = genDiff(valueLeft.(map[string]any), valueRight.(map[string]any)).child
 	case typeLeft.Kind() == reflect.Map && typeRight.Kind() != reflect.Map:
-		change = "value_changed"
+		fallthrough
 	case typeLeft.Kind() != reflect.Map && typeRight.Kind() == reflect.Map:
 		change = "value_changed"
 	default:

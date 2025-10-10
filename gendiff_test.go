@@ -19,7 +19,63 @@ func TestGenDiff_Json(t *testing.T) {
   - timeout: 50
   + timeout: 20
   + verbose: true
-}`
+}
+`
+
+	assert.Equal(t, expected, actual)
+}
+
+func TestGenDiff_JsonRecurcive(t *testing.T) {
+	actual, err := GenDiff("testdata/fixture/file1_recursive.json", "testdata/fixture/file2_recursive.json", "stylish")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := `{
+    common: {
+      + follow: false
+        setting1: Value 1
+      - setting2: 200
+      - setting3: true
+      + setting3: null
+      + setting4: blah blah
+      + setting5: {
+            key5: value5
+        }
+        setting6: {
+            doge: {
+              - wow: 
+              + wow: so much
+            }
+            key: value
+          + ops: vops
+        }
+    }
+    group1: {
+      - baz: bas
+      + baz: bars
+        foo: bar
+      - nest: {
+            key: value
+        }
+      + nest: str
+    }
+  - group2: {
+        abc: 12345
+        deep: {
+            id: 45
+        }
+    }
+  + group3: {
+        deep: {
+            id: {
+                number: 45
+            }
+        }
+        fee: 100500
+    }
+}
+`
 
 	assert.Equal(t, expected, actual)
 }
@@ -43,7 +99,63 @@ func TestGenDiff_Yaml(t *testing.T) {
   - timeout: 50
   + timeout: 20
   + verbose: true
-}`
+}
+`
+
+	assert.Equal(t, expected, actual)
+}
+
+func TestGenDiff_YamlRecurcive(t *testing.T) {
+	actual, err := GenDiff("testdata/fixture/file1_recursive.yml", "testdata/fixture/file2_recursive.yml", "stylish")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := `{
+    common: {
+      + follow: false
+        setting1: Value 1
+      - setting2: 200
+      - setting3: true
+      + setting3: null
+      + setting4: blah blah
+      + setting5: {
+            key5: value5
+        }
+        setting6: {
+            doge: {
+              - wow: 
+              + wow: so much
+            }
+            key: value
+          + ops: vops
+        }
+    }
+    group1: {
+      - baz: bas
+      + baz: bars
+        foo: bar
+      - nest: {
+            key: value
+        }
+      + nest: str
+    }
+  - group2: {
+        abc: 12345
+        deep: {
+            id: 45
+        }
+    }
+  + group3: {
+        deep: {
+            id: {
+                number: 45
+            }
+        }
+        fee: 100500
+    }
+}
+`
 
 	assert.Equal(t, expected, actual)
 }
