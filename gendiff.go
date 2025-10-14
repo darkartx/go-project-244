@@ -3,17 +3,12 @@ package code
 import (
 	"reflect"
 	"slices"
+
+	"github.com/darkartx/go-project-244/formatters"
+	"github.com/darkartx/go-project-244/shared"
 )
 
 type empty struct{}
-
-type diff struct {
-	key        string
-	change     string
-	valueLeft  any
-	valueRight any
-	child      map[string]diff
-}
 
 func GenDiff(filepathLeft, filepathRight, format string) (string, error) {
 	if format == "" {
@@ -32,16 +27,16 @@ func GenDiff(filepathLeft, filepathRight, format string) (string, error) {
 
 	diff := genDiff(dataLeft, dataRight)
 
-	formater, err := getFormater(format, diff)
+	formater, err := formatters.GetFormater(format, diff)
 	if err != nil {
 		return "", err
 	}
 
-	return formater.build(), nil
+	return formater.Build(), nil
 }
 
-func genDiff(dataLeft, dataRight map[string]any) diff {
-	result := make(map[string]diff)
+func genDiff(dataLeft, dataRight map[string]any) shared.Diff {
+	result := make(map[string]shared.Diff)
 	var keys []string
 
 	for k := range dataLeft {
@@ -68,20 +63,14 @@ func genDiff(dataLeft, dataRight map[string]any) diff {
 		result[key] = makeDiff(key, valueLeft, valueRight)
 	}
 
-	return diff{
-		key:        "",
-		change:     "diff",
-		valueLeft:  dataLeft,
-		valueRight: dataRight,
-		child:      result,
-	}
+	return shared.NewDiff("", "diff", dataLeft, dataRight, result)
 }
 
-func makeDiff(key string, valueLeft, valueRight any) diff {
+func makeDiff(key string, valueLeft, valueRight any) shared.Diff {
 	typeLeft := reflect.TypeOf(valueLeft)
 	typeRight := reflect.TypeOf(valueRight)
 	change := "unchanged"
-	var child map[string]diff
+	var child map[string]shared.Diff
 
 	switch {
 	case typeLeft == nil || typeRight == nil:
@@ -94,7 +83,7 @@ func makeDiff(key string, valueLeft, valueRight any) diff {
 		change = "removed"
 	case typeLeft.Kind() == reflect.Map && typeRight.Kind() == reflect.Map:
 		change = "diff"
-		child = genDiff(valueLeft.(map[string]any), valueRight.(map[string]any)).child
+		child = genDiff(valueLeft.(map[string]any), valueRight.(map[string]any)).Child
 	case typeLeft.Kind() == reflect.Map && typeRight.Kind() != reflect.Map:
 		fallthrough
 	case typeLeft.Kind() != reflect.Map && typeRight.Kind() == reflect.Map:
@@ -105,5 +94,5 @@ func makeDiff(key string, valueLeft, valueRight any) diff {
 		}
 	}
 
-	return diff{key, change, valueLeft, valueRight, child}
+	return shared.NewDiff(key, change, valueLeft, valueRight, child)
 }
