@@ -20,18 +20,18 @@ type formater interface {
 }
 
 type stylish struct {
-	root_diff diff
-	builder   strings.Builder
-	indent    uint8
+	rootDiff diff
+	builder  strings.Builder
+	indent   uint8
 }
 
 func newStylish(diff diff) *stylish {
-	result := &stylish{root_diff: diff}
+	result := &stylish{rootDiff: diff}
 	return result
 }
 
 func (f *stylish) build() string {
-	f.addDiff(f.root_diff.key, f.root_diff)
+	f.addDiff(f.rootDiff.key, f.rootDiff)
 	return f.builder.String()
 }
 
@@ -126,10 +126,88 @@ func (f *stylish) addMap(value map[string]any) {
 	f.addIndeted(' ', "}\n")
 }
 
+type plain struct {
+	rootDiff diff
+	builder  strings.Builder
+	scope    []string
+}
+
+func newPlain(diff diff) *plain {
+	result := &plain{rootDiff: diff}
+	return result
+}
+
+func (f *plain) build() string {
+	f.addDiff(f.rootDiff.key, f.rootDiff)
+	return f.builder.String()
+}
+
+func (f *plain) addDiff(key string, diff diff) {
+	keys := slices.Sorted(maps.Keys(diff.child))
+
+	for _, key := range keys {
+		diffItem := diff.child[key]
+		f.scope = append(f.scope, key)
+
+		switch diffItem.change {
+		case "added":
+			f.addAdded(diffItem)
+		case "removed":
+			f.addRemoved()
+		case "value_changed":
+			f.addValueChanged(diffItem)
+		case "diff":
+			f.addDiff(key, diffItem)
+		}
+
+		f.scope = f.scope[:len(f.scope)-1]
+	}
+}
+
+func (f *plain) addAdded(diff diff) {
+	key := strings.Join(f.scope, ".")
+	value := plainValue(diff.valueRight)
+
+	fmt.Fprintf(&f.builder, "Property '%s' was added with value: %s\n", key, value)
+}
+
+func (f *plain) addRemoved() {
+	key := strings.Join(f.scope, ".")
+
+	fmt.Fprintf(&f.builder, "Property '%s' was removed\n", key)
+}
+
+func (f *plain) addValueChanged(diff diff) {
+	key := strings.Join(f.scope, ".")
+	valueLeft := plainValue(diff.valueLeft)
+	valueRight := plainValue(diff.valueRight)
+
+	fmt.Fprintf(&f.builder, "Property '%s' was updated. From %s to %s\n", key, valueLeft, valueRight)
+}
+
+func plainValue(value any) string {
+	var result string
+
+	switch value := value.(type) {
+	case nil:
+		result = "null"
+	case string:
+		result = fmt.Sprintf("'%s'", value)
+	case map[string]any:
+		result = "[complex value]"
+	default:
+		result = fmt.Sprintf("%v", value)
+	}
+
+	return result
+}
+
 func getFormater(format string, diff diff) (formater, error) {
 	switch format {
 	case "stylish":
 		return newStylish(diff), nil
+	case "plain":
+		return newPlain(diff), nil
 	default:
 		return nil, UnsupportedFormat{Format: format}
 	}

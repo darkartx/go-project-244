@@ -1,18 +1,23 @@
 package code
 
 import (
+	"fmt"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGenDiff_Json(t *testing.T) {
-	actual, err := GenDiff("testdata/fixture/file1.json", "testdata/fixture/file2.json", "stylish")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	expected := `{
+func TestGenDiff_JsonStylish(t *testing.T) {
+	cases := []struct {
+		leftFile, rightFile string
+		expected            string
+	}{
+		// Flat json
+		{
+			"file1.json",
+			"file2.json",
+			`{
   - follow: false
     host: hexlet.io
   - proxy: 123.234.53.22
@@ -20,18 +25,13 @@ func TestGenDiff_Json(t *testing.T) {
   + timeout: 20
   + verbose: true
 }
-`
-
-	assert.Equal(t, expected, actual)
-}
-
-func TestGenDiff_JsonRecurcive(t *testing.T) {
-	actual, err := GenDiff("testdata/fixture/file1_recursive.json", "testdata/fixture/file2_recursive.json", "stylish")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	expected := `{
+`,
+		},
+		// Recursive json
+		{
+			"file1_recursive.json",
+			"file2_recursive.json",
+			`{
     common: {
       + follow: false
         setting1: Value 1
@@ -75,9 +75,74 @@ func TestGenDiff_JsonRecurcive(t *testing.T) {
         fee: 100500
     }
 }
-`
+`,
+		},
+	}
 
-	assert.Equal(t, expected, actual)
+	for _, c := range cases {
+		name := fmt.Sprintf("%s_%s", c.leftFile, c.rightFile)
+
+		t.Run(name, func(t *testing.T) {
+			leftFile := filepath.Join("testdata", "fixture", c.leftFile)
+			rightFile := filepath.Join("testdata", "fixture", c.rightFile)
+			actual, err := GenDiff(leftFile, rightFile, "stylish")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
+func TestGenDiff_JsonPlain(t *testing.T) {
+	cases := []struct {
+		leftFile, rightFile string
+		expected            string
+	}{
+		// Flat json
+		{
+			"file1.json",
+			"file2.json",
+			`Property 'follow' was removed
+Property 'proxy' was removed
+Property 'timeout' was updated. From 50 to 20
+Property 'verbose' was added with value: true
+`,
+		},
+		// Recursive json
+		{
+			"file1_recursive.json",
+			"file2_recursive.json",
+			`Property 'common.follow' was added with value: false
+Property 'common.setting2' was removed
+Property 'common.setting3' was updated. From true to null
+Property 'common.setting4' was added with value: 'blah blah'
+Property 'common.setting5' was added with value: [complex value]
+Property 'common.setting6.doge.wow' was updated. From '' to 'so much'
+Property 'common.setting6.ops' was added with value: 'vops'
+Property 'group1.baz' was updated. From 'bas' to 'bars'
+Property 'group1.nest' was updated. From [complex value] to 'str'
+Property 'group2' was removed
+Property 'group3' was added with value: [complex value]
+`,
+		},
+	}
+
+	for _, c := range cases {
+		name := fmt.Sprintf("%s_%s", c.leftFile, c.rightFile)
+
+		t.Run(name, func(t *testing.T) {
+			leftFile := filepath.Join("testdata", "fixture", c.leftFile)
+			rightFile := filepath.Join("testdata", "fixture", c.rightFile)
+			actual, err := GenDiff(leftFile, rightFile, "plain")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assert.Equal(t, c.expected, actual)
+		})
+	}
 }
 
 func TestGenDiff_ErrorBadJson(t *testing.T) {
@@ -86,13 +151,16 @@ func TestGenDiff_ErrorBadJson(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestGenDiff_Yaml(t *testing.T) {
-	actual, err := GenDiff("testdata/fixture/file1.yml", "testdata/fixture/file2.yml", "stylish")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	expected := `{
+func TestGenDiff_YamlStylish(t *testing.T) {
+	cases := []struct {
+		leftFile, rightFile string
+		expected            string
+	}{
+		// Flat yaml
+		{
+			"file1.yml",
+			"file2.yml",
+			`{
   - follow: false
     host: hexlet.io
   - proxy: 123.234.53.22
@@ -100,18 +168,13 @@ func TestGenDiff_Yaml(t *testing.T) {
   + timeout: 20
   + verbose: true
 }
-`
-
-	assert.Equal(t, expected, actual)
-}
-
-func TestGenDiff_YamlRecurcive(t *testing.T) {
-	actual, err := GenDiff("testdata/fixture/file1_recursive.yml", "testdata/fixture/file2_recursive.yml", "stylish")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	expected := `{
+`,
+		},
+		// Recursive yaml
+		{
+			"file1_recursive.yml",
+			"file2_recursive.yml",
+			`{
     common: {
       + follow: false
         setting1: Value 1
@@ -155,9 +218,74 @@ func TestGenDiff_YamlRecurcive(t *testing.T) {
         fee: 100500
     }
 }
-`
+`,
+		},
+	}
 
-	assert.Equal(t, expected, actual)
+	for _, c := range cases {
+		name := fmt.Sprintf("%s_%s", c.leftFile, c.rightFile)
+
+		t.Run(name, func(t *testing.T) {
+			leftFile := filepath.Join("testdata", "fixture", c.leftFile)
+			rightFile := filepath.Join("testdata", "fixture", c.rightFile)
+			actual, err := GenDiff(leftFile, rightFile, "stylish")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
+func TestGenDiff_YamlPlain(t *testing.T) {
+	cases := []struct {
+		leftFile, rightFile string
+		expected            string
+	}{
+		// Flat yaml
+		{
+			"file1.yml",
+			"file2.yml",
+			`Property 'follow' was removed
+Property 'proxy' was removed
+Property 'timeout' was updated. From 50 to 20
+Property 'verbose' was added with value: true
+`,
+		},
+		// Recursive yaml
+		{
+			"file1_recursive.yml",
+			"file2_recursive.yml",
+			`Property 'common.follow' was added with value: false
+Property 'common.setting2' was removed
+Property 'common.setting3' was updated. From true to null
+Property 'common.setting4' was added with value: 'blah blah'
+Property 'common.setting5' was added with value: [complex value]
+Property 'common.setting6.doge.wow' was updated. From '' to 'so much'
+Property 'common.setting6.ops' was added with value: 'vops'
+Property 'group1.baz' was updated. From 'bas' to 'bars'
+Property 'group1.nest' was updated. From [complex value] to 'str'
+Property 'group2' was removed
+Property 'group3' was added with value: [complex value]
+`,
+		},
+	}
+
+	for _, c := range cases {
+		name := fmt.Sprintf("%s_%s", c.leftFile, c.rightFile)
+
+		t.Run(name, func(t *testing.T) {
+			leftFile := filepath.Join("testdata", "fixture", c.leftFile)
+			rightFile := filepath.Join("testdata", "fixture", c.rightFile)
+			actual, err := GenDiff(leftFile, rightFile, "plain")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assert.Equal(t, c.expected, actual)
+		})
+	}
 }
 
 func TestGenDiff_ErrorBadYaml(t *testing.T) {
