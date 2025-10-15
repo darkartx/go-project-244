@@ -21,11 +21,11 @@ func newPlain(diff shared.Diff) *plain {
 }
 
 func (f *plain) Build() string {
-	f.addDiff(f.rootDiff.Key, f.rootDiff)
+	f.addDiff(f.rootDiff)
 	return f.builder.String()
 }
 
-func (f *plain) addDiff(key string, diff shared.Diff) {
+func (f *plain) addDiff(diff shared.Diff) {
 	keys := slices.Sorted(maps.Keys(diff.Child))
 
 	for _, key := range keys {
@@ -40,7 +40,7 @@ func (f *plain) addDiff(key string, diff shared.Diff) {
 		case "value_changed":
 			f.addValueChanged(diffItem)
 		case "diff":
-			f.addDiff(key, diffItem)
+			f.addDiff(diffItem)
 		}
 
 		f.scope = f.scope[:len(f.scope)-1]
