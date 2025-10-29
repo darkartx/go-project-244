@@ -145,6 +145,160 @@ Property 'group3' was added with value: [complex value]
 	}
 }
 
+func TestGenDiff_JsonJson(t *testing.T) {
+	cases := []struct {
+		leftFile, rightFile string
+		expected            string
+	}{
+		// Flat json
+		{
+			"file1.json",
+			"file2.json",
+			`{
+  "follow": {
+    "change": "removed",
+    "left_value": false
+  },
+  "host": {
+    "change": "unchanged",
+    "left_value": "hexlet.io"
+  },
+  "proxy": {
+    "change": "removed",
+    "left_value": "123.234.53.22"
+  },
+  "timeout": {
+    "change": "value_changed",
+    "left_value": 50,
+    "right_value": 20
+  },
+  "verbose": {
+    "change": "added",
+    "right_value": true
+  }
+}`,
+		},
+		// Recursive json
+		{
+			"file1_recursive.json",
+			"file2_recursive.json",
+			`{
+  "common": {
+    "change": "diff",
+    "diff": {
+      "follow": {
+        "change": "added",
+        "right_value": false
+      },
+      "setting1": {
+        "change": "unchanged",
+        "left_value": "Value 1"
+      },
+      "setting2": {
+        "change": "removed",
+        "left_value": 200
+      },
+      "setting3": {
+        "change": "value_changed",
+        "left_value": true,
+        "right_value": null
+      },
+      "setting4": {
+        "change": "added",
+        "right_value": "blah blah"
+      },
+      "setting5": {
+        "change": "added",
+        "right_value": {
+          "key5": "value5"
+        }
+      },
+      "setting6": {
+        "change": "diff",
+        "diff": {
+          "doge": {
+            "change": "diff",
+            "diff": {
+              "wow": {
+                "change": "value_changed",
+                "left_value": "",
+                "right_value": "so much"
+              }
+            }
+          },
+          "key": {
+            "change": "unchanged",
+            "left_value": "value"
+          },
+          "ops": {
+            "change": "added",
+            "right_value": "vops"
+          }
+        }
+      }
+    }
+  },
+  "group1": {
+    "change": "diff",
+    "diff": {
+      "baz": {
+        "change": "value_changed",
+        "left_value": "bas",
+        "right_value": "bars"
+      },
+      "foo": {
+        "change": "unchanged",
+        "left_value": "bar"
+      },
+      "nest": {
+        "change": "value_changed",
+        "left_value": {
+          "key": "value"
+        },
+        "right_value": "str"
+      }
+    }
+  },
+  "group2": {
+    "change": "removed",
+    "left_value": {
+      "abc": 12345,
+      "deep": {
+        "id": 45
+      }
+    }
+  },
+  "group3": {
+    "change": "added",
+    "right_value": {
+      "deep": {
+        "id": {
+          "number": 45
+        }
+      },
+      "fee": 100500
+    }
+  }
+}`,
+		},
+	}
+
+	for _, c := range cases {
+		name := fmt.Sprintf("%s_%s", c.leftFile, c.rightFile)
+
+		t.Run(name, func(t *testing.T) {
+			leftFile := filepath.Join("testdata", "fixture", c.leftFile)
+			rightFile := filepath.Join("testdata", "fixture", c.rightFile)
+			actual, err := GenDiff(leftFile, rightFile, "json")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
 func TestGenDiff_ErrorBadJson(t *testing.T) {
 	_, err := GenDiff("testdata/fixture/file1.json", "testdata/fixture/bad_json.json", "stylish")
 
@@ -279,6 +433,160 @@ Property 'group3' was added with value: [complex value]
 			leftFile := filepath.Join("testdata", "fixture", c.leftFile)
 			rightFile := filepath.Join("testdata", "fixture", c.rightFile)
 			actual, err := GenDiff(leftFile, rightFile, "plain")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
+func TestGenDiff_YamlJson(t *testing.T) {
+	cases := []struct {
+		leftFile, rightFile string
+		expected            string
+	}{
+		// Flat yaml
+		{
+			"file1.yml",
+			"file2.yml",
+			`{
+  "follow": {
+    "change": "removed",
+    "left_value": false
+  },
+  "host": {
+    "change": "unchanged",
+    "left_value": "hexlet.io"
+  },
+  "proxy": {
+    "change": "removed",
+    "left_value": "123.234.53.22"
+  },
+  "timeout": {
+    "change": "value_changed",
+    "left_value": 50,
+    "right_value": 20
+  },
+  "verbose": {
+    "change": "added",
+    "right_value": true
+  }
+}`,
+		},
+		// Recursive yaml
+		{
+			"file1_recursive.yml",
+			"file2_recursive.yml",
+			`{
+  "common": {
+    "change": "diff",
+    "diff": {
+      "follow": {
+        "change": "added",
+        "right_value": false
+      },
+      "setting1": {
+        "change": "unchanged",
+        "left_value": "Value 1"
+      },
+      "setting2": {
+        "change": "removed",
+        "left_value": 200
+      },
+      "setting3": {
+        "change": "value_changed",
+        "left_value": true,
+        "right_value": null
+      },
+      "setting4": {
+        "change": "added",
+        "right_value": "blah blah"
+      },
+      "setting5": {
+        "change": "added",
+        "right_value": {
+          "key5": "value5"
+        }
+      },
+      "setting6": {
+        "change": "diff",
+        "diff": {
+          "doge": {
+            "change": "diff",
+            "diff": {
+              "wow": {
+                "change": "value_changed",
+                "left_value": "",
+                "right_value": "so much"
+              }
+            }
+          },
+          "key": {
+            "change": "unchanged",
+            "left_value": "value"
+          },
+          "ops": {
+            "change": "added",
+            "right_value": "vops"
+          }
+        }
+      }
+    }
+  },
+  "group1": {
+    "change": "diff",
+    "diff": {
+      "baz": {
+        "change": "value_changed",
+        "left_value": "bas",
+        "right_value": "bars"
+      },
+      "foo": {
+        "change": "unchanged",
+        "left_value": "bar"
+      },
+      "nest": {
+        "change": "value_changed",
+        "left_value": {
+          "key": "value"
+        },
+        "right_value": "str"
+      }
+    }
+  },
+  "group2": {
+    "change": "removed",
+    "left_value": {
+      "abc": 12345,
+      "deep": {
+        "id": 45
+      }
+    }
+  },
+  "group3": {
+    "change": "added",
+    "right_value": {
+      "deep": {
+        "id": {
+          "number": 45
+        }
+      },
+      "fee": 100500
+    }
+  }
+}`,
+		},
+	}
+
+	for _, c := range cases {
+		name := fmt.Sprintf("%s_%s", c.leftFile, c.rightFile)
+
+		t.Run(name, func(t *testing.T) {
+			leftFile := filepath.Join("testdata", "fixture", c.leftFile)
+			rightFile := filepath.Join("testdata", "fixture", c.rightFile)
+			actual, err := GenDiff(leftFile, rightFile, "json")
 			if err != nil {
 				t.Fatal(err)
 			}

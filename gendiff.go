@@ -32,7 +32,7 @@ func GenDiff(filepathLeft, filepathRight, format string) (string, error) {
 		return "", err
 	}
 
-	return formater.Build(), nil
+	return formater.Build()
 }
 
 func genDiff(dataLeft, dataRight map[string]any) shared.Diff {

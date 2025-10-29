@@ -20,12 +20,12 @@ func newPlain(diff shared.Diff) *plain {
 	return result
 }
 
-func (f *plain) Build() string {
-	f.addDiff(f.rootDiff)
-	return f.builder.String()
+func (f *plain) Build() (string, error) {
+	f.addDiff(&f.rootDiff)
+	return f.builder.String(), nil
 }
 
-func (f *plain) addDiff(diff shared.Diff) {
+func (f *plain) addDiff(diff *shared.Diff) {
 	keys := slices.Sorted(maps.Keys(diff.Child))
 
 	for _, key := range keys {
@@ -34,20 +34,20 @@ func (f *plain) addDiff(diff shared.Diff) {
 
 		switch diffItem.Change {
 		case "added":
-			f.addAdded(diffItem)
+			f.addAdded(&diffItem)
 		case "removed":
 			f.addRemoved()
 		case "value_changed":
-			f.addValueChanged(diffItem)
+			f.addValueChanged(&diffItem)
 		case "diff":
-			f.addDiff(diffItem)
+			f.addDiff(&diffItem)
 		}
 
 		f.scope = f.scope[:len(f.scope)-1]
 	}
 }
 
-func (f *plain) addAdded(diff shared.Diff) {
+func (f *plain) addAdded(diff *shared.Diff) {
 	key := strings.Join(f.scope, ".")
 	value := plainValue(diff.RightValue)
 
@@ -60,7 +60,7 @@ func (f *plain) addRemoved() {
 	fmt.Fprintf(&f.builder, "Property '%s' was removed\n", key)
 }
 
-func (f *plain) addValueChanged(diff shared.Diff) {
+func (f *plain) addValueChanged(diff *shared.Diff) {
 	key := strings.Join(f.scope, ".")
 	valueLeft := plainValue(diff.LeftValue)
 	valueRight := plainValue(diff.RightValue)

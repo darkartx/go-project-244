@@ -20,16 +20,16 @@ func newStylish(diff shared.Diff) *stylish {
 	return result
 }
 
-func (f *stylish) Build() string {
-	f.addDiff(f.rootDiff.Key, f.rootDiff)
-	return f.builder.String()
+func (f *stylish) Build() (string, error) {
+	f.addDiff(&f.rootDiff)
+	return f.builder.String(), nil
 }
 
-func (f *stylish) addDiff(key string, diff shared.Diff) {
-	if key == "" {
+func (f *stylish) addDiff(diff *shared.Diff) {
+	if diff.Key == "" {
 		f.addIndeted(' ', "{\n")
 	} else {
-		f.addIndeted(' ', "%s: {\n", key)
+		f.addIndeted(' ', "%s: {\n", diff.Key)
 	}
 
 	keys := slices.Sorted(maps.Keys(diff.Child))
@@ -40,15 +40,15 @@ func (f *stylish) addDiff(key string, diff shared.Diff) {
 
 		switch diffItem.Change {
 		case "unchanged":
-			f.addUnchanged(key, diffItem)
+			f.addUnchanged(&diffItem)
 		case "added":
-			f.addAdded(key, diffItem)
+			f.addAdded(&diffItem)
 		case "removed":
-			f.addRemoved(key, diffItem)
+			f.addRemoved(&diffItem)
 		case "value_changed":
-			f.addValueChanged(key, diffItem)
+			f.addValueChanged(&diffItem)
 		case "diff":
-			f.addDiff(key, diffItem)
+			f.addDiff(&diffItem)
 		}
 	}
 	f.indent -= 1
@@ -56,24 +56,24 @@ func (f *stylish) addDiff(key string, diff shared.Diff) {
 	f.addIndeted(' ', "}\n")
 }
 
-func (f *stylish) addUnchanged(key string, diff shared.Diff) {
-	f.addIndeted(' ', "%s: ", key)
+func (f *stylish) addUnchanged(diff *shared.Diff) {
+	f.addIndeted(' ', "%s: ", diff.Key)
 	f.addValue(diff.LeftValue)
 }
 
-func (f *stylish) addAdded(key string, diff shared.Diff) {
-	f.addIndeted('+', "%s: ", key)
+func (f *stylish) addAdded(diff *shared.Diff) {
+	f.addIndeted('+', "%s: ", diff.Key)
 	f.addValue(diff.RightValue)
 }
 
-func (f *stylish) addRemoved(key string, diff shared.Diff) {
-	f.addIndeted('-', "%s: ", key)
+func (f *stylish) addRemoved(diff *shared.Diff) {
+	f.addIndeted('-', "%s: ", diff.Key)
 	f.addValue(diff.LeftValue)
 }
 
-func (f *stylish) addValueChanged(key string, diff shared.Diff) {
-	f.addRemoved(key, diff)
-	f.addAdded(key, diff)
+func (f *stylish) addValueChanged(diff *shared.Diff) {
+	f.addRemoved(diff)
+	f.addAdded(diff)
 }
 
 func (f *stylish) addValue(value any) {

@@ -15,7 +15,7 @@ func (e UnsupportedFormat) Error() string {
 }
 
 type Formatter interface {
-	Build() string
+	Build() (string, error)
 }
 
 func GetFormater(format string, diff shared.Diff) (Formatter, error) {
@@ -24,6 +24,8 @@ func GetFormater(format string, diff shared.Diff) (Formatter, error) {
 		return newStylish(diff), nil
 	case "plain":
 		return newPlain(diff), nil
+	case "json":
+		return newJson(diff), nil
 	default:
 		return nil, UnsupportedFormat{Format: format}
 	}
