@@ -22,7 +22,7 @@ func newPlain(diff shared.Diff) *plain {
 
 func (f *plain) Build() (string, error) {
 	f.addDiff(&f.rootDiff)
-	return f.builder.String(), nil
+	return f.builder.String()[1:], nil
 }
 
 func (f *plain) addDiff(diff *shared.Diff) {
@@ -34,10 +34,13 @@ func (f *plain) addDiff(diff *shared.Diff) {
 
 		switch diffItem.Change {
 		case "added":
+			fmt.Fprint(&f.builder, "\n")
 			f.addAdded(&diffItem)
 		case "removed":
+			fmt.Fprint(&f.builder, "\n")
 			f.addRemoved()
 		case "value_changed":
+			fmt.Fprint(&f.builder, "\n")
 			f.addValueChanged(&diffItem)
 		case "diff":
 			f.addDiff(&diffItem)
@@ -51,13 +54,13 @@ func (f *plain) addAdded(diff *shared.Diff) {
 	key := strings.Join(f.scope, ".")
 	value := plainValue(diff.RightValue)
 
-	fmt.Fprintf(&f.builder, "Property '%s' was added with value: %s\n", key, value)
+	fmt.Fprintf(&f.builder, "Property '%s' was added with value: %s", key, value)
 }
 
 func (f *plain) addRemoved() {
 	key := strings.Join(f.scope, ".")
 
-	fmt.Fprintf(&f.builder, "Property '%s' was removed\n", key)
+	fmt.Fprintf(&f.builder, "Property '%s' was removed", key)
 }
 
 func (f *plain) addValueChanged(diff *shared.Diff) {
@@ -65,7 +68,7 @@ func (f *plain) addValueChanged(diff *shared.Diff) {
 	valueLeft := plainValue(diff.LeftValue)
 	valueRight := plainValue(diff.RightValue)
 
-	fmt.Fprintf(&f.builder, "Property '%s' was updated. From %s to %s\n", key, valueLeft, valueRight)
+	fmt.Fprintf(&f.builder, "Property '%s' was updated. From %s to %s", key, valueLeft, valueRight)
 }
 
 func plainValue(value any) string {

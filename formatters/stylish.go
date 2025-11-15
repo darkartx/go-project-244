@@ -50,10 +50,12 @@ func (f *stylish) addDiff(diff *shared.Diff) {
 		case "diff":
 			f.addDiff(&diffItem)
 		}
+
+		fmt.Fprint(&f.builder, "\n")
 	}
 	f.indent -= 1
 
-	f.addIndeted(' ', "}\n")
+	f.addIndeted(' ', "}")
 }
 
 func (f *stylish) addUnchanged(diff *shared.Diff) {
@@ -73,6 +75,7 @@ func (f *stylish) addRemoved(diff *shared.Diff) {
 
 func (f *stylish) addValueChanged(diff *shared.Diff) {
 	f.addRemoved(diff)
+	fmt.Fprint(&f.builder, "\n")
 	f.addAdded(diff)
 }
 
@@ -81,9 +84,9 @@ func (f *stylish) addValue(value any) {
 	case map[string]any:
 		f.addMap(value)
 	case nil:
-		fmt.Fprint(&f.builder, "null\n")
+		fmt.Fprint(&f.builder, "null")
 	default:
-		fmt.Fprintf(&f.builder, "%v\n", value)
+		fmt.Fprintf(&f.builder, "%v", value)
 	}
 }
 
@@ -110,8 +113,9 @@ func (f *stylish) addMap(value map[string]any) {
 
 		f.addIndeted(' ', "%s: ", key)
 		f.addValue(item)
+		fmt.Fprint(&f.builder, "\n")
 	}
 	f.indent -= 1
 
-	f.addIndeted(' ', "}\n")
+	f.addIndeted(' ', "}")
 }
