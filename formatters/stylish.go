@@ -6,26 +6,26 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/darkartx/go-project-244/shared"
+	"github.com/darkartx/go-project-244/internal"
 )
 
-type stylish struct {
-	rootDiff shared.Diff
+type Stylish struct {
+	rootDiff internal.Diff
 	builder  strings.Builder
 	indent   uint8
 }
 
-func newStylish(diff shared.Diff) *stylish {
-	result := &stylish{rootDiff: diff}
+func NewStylish(diff internal.Diff) *Stylish {
+	result := &Stylish{rootDiff: diff}
 	return result
 }
 
-func (f *stylish) Build() (string, error) {
+func (f *Stylish) Build() (string, error) {
 	f.addDiff(&f.rootDiff)
 	return f.builder.String(), nil
 }
 
-func (f *stylish) addDiff(diff *shared.Diff) {
+func (f *Stylish) addDiff(diff *internal.Diff) {
 	if diff.Key == "" {
 		f.addIndeted(' ', "{\n")
 	} else {
@@ -39,15 +39,15 @@ func (f *stylish) addDiff(diff *shared.Diff) {
 		diffItem := diff.Child[key]
 
 		switch diffItem.Change {
-		case "unchanged":
+		case internal.DIFF_CHANGE_UNCAHGNED:
 			f.addUnchanged(&diffItem)
-		case "added":
+		case internal.DIFF_CHANGE_VALUE_ADDED:
 			f.addAdded(&diffItem)
-		case "removed":
+		case internal.DIFF_CHANGE_VALUE_REMOVED:
 			f.addRemoved(&diffItem)
-		case "value_changed":
+		case internal.DIFF_CHANGE_VALUE_CHANGED:
 			f.addValueChanged(&diffItem)
-		case "diff":
+		case internal.DIFF_CHANGE_DIFF:
 			f.addDiff(&diffItem)
 		}
 
@@ -58,28 +58,28 @@ func (f *stylish) addDiff(diff *shared.Diff) {
 	f.addIndeted(' ', "}")
 }
 
-func (f *stylish) addUnchanged(diff *shared.Diff) {
+func (f *Stylish) addUnchanged(diff *internal.Diff) {
 	f.addIndeted(' ', "%s: ", diff.Key)
 	f.addValue(diff.LeftValue)
 }
 
-func (f *stylish) addAdded(diff *shared.Diff) {
+func (f *Stylish) addAdded(diff *internal.Diff) {
 	f.addIndeted('+', "%s: ", diff.Key)
 	f.addValue(diff.RightValue)
 }
 
-func (f *stylish) addRemoved(diff *shared.Diff) {
+func (f *Stylish) addRemoved(diff *internal.Diff) {
 	f.addIndeted('-', "%s: ", diff.Key)
 	f.addValue(diff.LeftValue)
 }
 
-func (f *stylish) addValueChanged(diff *shared.Diff) {
+func (f *Stylish) addValueChanged(diff *internal.Diff) {
 	f.addRemoved(diff)
 	fmt.Fprint(&f.builder, "\n")
 	f.addAdded(diff)
 }
 
-func (f *stylish) addValue(value any) {
+func (f *Stylish) addValue(value any) {
 	switch value := value.(type) {
 	case map[string]any:
 		f.addMap(value)
@@ -90,7 +90,7 @@ func (f *stylish) addValue(value any) {
 	}
 }
 
-func (f *stylish) addIndeted(sym rune, format string, args ...any) {
+func (f *Stylish) addIndeted(sym rune, format string, args ...any) {
 	if f.indent > 0 {
 		fmt.Fprintf(
 			&f.builder,
@@ -102,7 +102,7 @@ func (f *stylish) addIndeted(sym rune, format string, args ...any) {
 	fmt.Fprintf(&f.builder, format, args...)
 }
 
-func (f *stylish) addMap(value map[string]any) {
+func (f *Stylish) addMap(value map[string]any) {
 	fmt.Fprintf(&f.builder, "{\n")
 
 	keys := slices.Sorted(maps.Keys(value))

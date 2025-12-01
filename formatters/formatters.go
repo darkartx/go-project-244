@@ -3,7 +3,7 @@ package formatters
 import (
 	"fmt"
 
-	"github.com/darkartx/go-project-244/shared"
+	"github.com/darkartx/go-project-244/internal"
 )
 
 type UnsupportedFormat struct {
@@ -18,14 +18,14 @@ type Formatter interface {
 	Build() (string, error)
 }
 
-func GetFormater(format string, diff shared.Diff) (Formatter, error) {
+func GetFormater(format string, diff internal.Diff) (Formatter, error) {
 	switch format {
 	case "stylish":
-		return newStylish(diff), nil
+		return NewStylish(diff), nil
 	case "plain":
-		return newPlain(diff), nil
+		return NewPlain(diff), nil
 	case "json":
-		return newJson(diff), nil
+		return NewJson(diff), nil
 	default:
 		return nil, UnsupportedFormat{Format: format}
 	}

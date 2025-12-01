@@ -6,26 +6,26 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/darkartx/go-project-244/shared"
+	"github.com/darkartx/go-project-244/internal"
 )
 
-type plain struct {
-	rootDiff shared.Diff
+type Plain struct {
+	rootDiff internal.Diff
 	builder  strings.Builder
 	scope    []string
 }
 
-func newPlain(diff shared.Diff) *plain {
-	result := &plain{rootDiff: diff}
+func NewPlain(diff internal.Diff) *Plain {
+	result := &Plain{rootDiff: diff}
 	return result
 }
 
-func (f *plain) Build() (string, error) {
+func (f *Plain) Build() (string, error) {
 	f.addDiff(&f.rootDiff)
 	return f.builder.String()[1:], nil
 }
 
-func (f *plain) addDiff(diff *shared.Diff) {
+func (f *Plain) addDiff(diff *internal.Diff) {
 	keys := slices.Sorted(maps.Keys(diff.Child))
 
 	for _, key := range keys {
@@ -33,16 +33,16 @@ func (f *plain) addDiff(diff *shared.Diff) {
 		f.scope = append(f.scope, key)
 
 		switch diffItem.Change {
-		case "added":
+		case internal.DIFF_CHANGE_VALUE_ADDED:
 			fmt.Fprint(&f.builder, "\n")
 			f.addAdded(&diffItem)
-		case "removed":
+		case internal.DIFF_CHANGE_VALUE_REMOVED:
 			fmt.Fprint(&f.builder, "\n")
 			f.addRemoved()
-		case "value_changed":
+		case internal.DIFF_CHANGE_VALUE_CHANGED:
 			fmt.Fprint(&f.builder, "\n")
 			f.addValueChanged(&diffItem)
-		case "diff":
+		case internal.DIFF_CHANGE_DIFF:
 			f.addDiff(&diffItem)
 		}
 
@@ -50,20 +50,20 @@ func (f *plain) addDiff(diff *shared.Diff) {
 	}
 }
 
-func (f *plain) addAdded(diff *shared.Diff) {
+func (f *Plain) addAdded(diff *internal.Diff) {
 	key := strings.Join(f.scope, ".")
 	value := plainValue(diff.RightValue)
 
 	fmt.Fprintf(&f.builder, "Property '%s' was added with value: %s", key, value)
 }
 
-func (f *plain) addRemoved() {
+func (f *Plain) addRemoved() {
 	key := strings.Join(f.scope, ".")
 
 	fmt.Fprintf(&f.builder, "Property '%s' was removed", key)
 }
 
-func (f *plain) addValueChanged(diff *shared.Diff) {
+func (f *Plain) addValueChanged(diff *internal.Diff) {
 	key := strings.Join(f.scope, ".")
 	valueLeft := plainValue(diff.LeftValue)
 	valueRight := plainValue(diff.RightValue)
