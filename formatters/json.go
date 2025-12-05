@@ -5,7 +5,7 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/darkartx/go-project-244/internal"
+	"code/internal"
 )
 
 var DiffChangeMap = map[int]string{

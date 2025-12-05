@@ -1,8 +1,8 @@
 package code
 
 import (
-	"github.com/darkartx/go-project-244/formatters"
-	"github.com/darkartx/go-project-244/internal"
+	"code/formatters"
+	"code/internal"
 )
 
 func GenDiff(filepathLeft, filepathRight, format string) (string, error) {

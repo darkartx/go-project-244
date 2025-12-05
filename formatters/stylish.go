@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/darkartx/go-project-244/internal"
+	"code/internal"
 )
 
 type Stylish struct {

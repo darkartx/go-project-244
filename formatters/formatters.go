@@ -3,7 +3,7 @@ package formatters
 import (
 	"fmt"
 
-	"github.com/darkartx/go-project-244/internal"
+	"code/internal"
 )
 
 type UnsupportedFormat struct {
