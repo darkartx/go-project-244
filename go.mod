@@ -1,4 +1,4 @@
-module github.com/darkartx/go-project-244
+module code
 
 go 1.24.5
 

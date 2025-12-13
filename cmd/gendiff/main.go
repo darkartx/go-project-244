@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	code "github.com/darkartx/go-project-244"
+	"code"
 
 	cli "github.com/urfave/cli/v3"
 )
